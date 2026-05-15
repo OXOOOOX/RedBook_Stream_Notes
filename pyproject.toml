@@ -1,0 +1,23 @@
+[project]
+name = "redbook-stream-notes"
+version = "0.1.0"
+description = "Listen to Xiaohongshu live share links, transcribe audio, and produce notes."
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "playwright",
+  "soundcard",
+  "soundfile",
+  "numpy",
+  "pydantic",
+  "python-dotenv",
+  "faster-whisper",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

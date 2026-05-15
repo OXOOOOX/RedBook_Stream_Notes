@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+playwright
+soundcard
+soundfile
+numpy
+pydantic
+python-dotenv
+faster-whisper
+pytest
