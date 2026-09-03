@@ -10,11 +10,15 @@ import numpy as np
 import soundfile as sf
 
 from .asr import Transcriber
-from .browser import BrowserSession, inspect_live_state, open_live_page
+from .browser import BrowserSession, inspect_live_state, open_live_page, unmute_page
 from .config import settings
 from .notes import build_note, build_refined_note
 from .recorder import LoopbackRecorder
 from .schemas import CreateJobRequest, JobSnapshot, JobStatus, TranscriptSegment
+
+
+SILENCE_PEAK_THRESHOLD = 0.0002
+NORMALIZE_PEAK_TARGET = 0.35
 
 
 @dataclass
@@ -87,6 +91,7 @@ class JobManager:
             job.status = "listening"
             job.note = "# 直播笔记\n\n浏览器已打开，等待直播音频。"
             job.touch()
+            await self._ensure_audible(job, browser)
 
             while not job.stop_event.is_set():
                 if job.request.max_chunks and job.chunks_completed >= job.request.max_chunks:
@@ -102,6 +107,9 @@ class JobManager:
                     job.touch()
                     break
 
+                if job.chunks_completed == 0:
+                    await self._ensure_audible(job, browser)
+
                 chunk_index = job.chunks_completed + 1
                 chunk_dir = job.directory / f"chunk_{chunk_index:04d}"
                 audio_path = chunk_dir / "audio.wav"
@@ -112,7 +120,7 @@ class JobManager:
                     job.ended_reason = str(state.get("reason") or "live_ended")
 
                 stats = await asyncio.to_thread(inspect_audio, audio_path)
-                if stats["peak"] < 0.001:
+                if stats["peak"] < SILENCE_PEAK_THRESHOLD:
                     job.chunks_completed += 1
                     job.note = (
                         "# 直播笔记\n\n"
@@ -125,6 +133,8 @@ class JobManager:
                         break
                     continue
 
+                await asyncio.to_thread(normalize_audio_if_quiet, audio_path, stats)
+
                 offset = job.chunks_completed * job.request.chunk_seconds
                 new_segments = await transcriber.transcribe(audio_path, chunk_dir, offset)
                 for segment in new_segments:
@@ -132,7 +142,7 @@ class JobManager:
                     job.segments.append(segment)
 
                 job.chunks_completed += 1
-                job.note = build_note(job.segments, str(job.request.url))
+                job.note = build_note(job.segments, str(job.request.url), job.created_at)
                 if job.ended_reason:
                     job.note = job.note.rstrip() + f"\n\n## 监听状态\n\n检测到直播结束：{job.ended_reason}\n"
                 (job.directory / "note.md").write_text(job.note, encoding="utf-8")
@@ -153,6 +163,23 @@ class JobManager:
             if browser is not None:
                 await browser.close()
 
+    async def _ensure_audible(self, job: StreamJob, browser: BrowserSession) -> None:
+        for attempt in range(3):
+            await unmute_page(browser.page)
+            probe_dir = job.directory / "probe"
+            probe_path = probe_dir / f"audio_probe_{attempt + 1}.wav"
+            await asyncio.to_thread(self.recorder.record_chunk, probe_path, 3)
+            stats = await asyncio.to_thread(inspect_audio, probe_path)
+            if stats["peak"] >= SILENCE_PEAK_THRESHOLD:
+                return
+        job.note = (
+            "# 直播笔记\n\n"
+            "音频预检仍为静音。请确认自动打开的直播窗口已经播放并取消静音，"
+            "或者检查浏览器声音是否路由到系统默认扬声器。\n"
+        )
+        (job.directory / "note.md").write_text(job.note, encoding="utf-8")
+        job.touch()
+
 
 manager = JobManager()
 
@@ -171,13 +198,27 @@ def inspect_audio(audio_path: Path) -> dict[str, float]:
     }
 
 
+def normalize_audio_if_quiet(audio_path: Path, stats: dict[str, float]) -> None:
+    peak = float(stats.get("peak") or 0.0)
+    if peak <= 0 or peak >= 0.02:
+        return
+    audio, sample_rate = sf.read(audio_path, always_2d=True)
+    gain = min(NORMALIZE_PEAK_TARGET / peak, 80.0)
+    boosted = np.clip(audio * gain, -0.98, 0.98)
+    sf.write(audio_path, boosted, sample_rate)
+
+
 def finish_note(job: StreamJob, message: str) -> str:
-    note = build_note(job.segments, str(job.request.url)) if job.segments else "# 直播笔记\n\n暂无可转写内容。"
+    note = (
+        build_note(job.segments, str(job.request.url), job.created_at)
+        if job.segments
+        else "# 直播笔记\n\n暂无可转写内容。"
+    )
     return note.rstrip() + f"\n\n## 监听状态\n\n{message}\n"
 
 
 def write_refined_note(job: StreamJob) -> None:
     if not job.segments:
         return
-    refined = build_refined_note(job.segments, str(job.request.url), job.ended_reason)
+    refined = build_refined_note(job.segments, str(job.request.url), job.ended_reason, job.created_at)
     (job.directory / "refined_note.md").write_text(refined, encoding="utf-8")

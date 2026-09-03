@@ -1,10 +1,2 @@
-fastapi
-uvicorn[standard]
-playwright
-soundcard
-soundfile
-numpy
-pydantic
-python-dotenv
-faster-whisper
-pytest
+# Compatibility entry point; dependencies are maintained in pyproject.toml.
+-e .[dev]

@@ -1,23 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "redbook-stream-notes"
 version = "0.1.0"
 description = "Listen to Xiaohongshu live share links, transcribe audio, and produce notes."
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "fastapi",
+  "fastapi>=0.100",
   "uvicorn[standard]",
   "playwright",
   "soundcard",
   "soundfile",
   "numpy",
-  "pydantic",
+  "pydantic>=2",
   "python-dotenv",
   "faster-whisper",
+  "tzdata",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "httpx"]
+
+[project.urls]
+Repository = "https://github.com/OXOOOOX/RedBook_Stream_Notes"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]

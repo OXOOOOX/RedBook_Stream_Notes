@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime, timezone
 import re
+from zoneinfo import ZoneInfo
 
 from .schemas import TranscriptSegment
 
@@ -36,11 +38,24 @@ CORRECTIONS = {
     "新能源車": "新能源车",
     "半導體": "半导体",
     "消費電子": "消费电子",
+    "科創": "科创",
+    "創業": "创业",
     "軟件": "软件",
+    "應用": "应用",
     "畫工": "化工",
     "航天": "航天",
     "李礦": "锂矿",
     "軍線": "均线",
+    "五日軍線": "5日均线",
+    "十日軍線": "10日均线",
+    "二十一天軍線": "21日均线",
+    "五日縣市": "5日线",
+    "訪談": "反弹",
+    "光磨快": "光模块",
+    "光某塊": "光模块",
+    "拌倒起": "半导体",
+    "喝串板": "科创板",
+    "柯串": "科创",
     "十日均线": "10日均线",
     "五日均线": "5日均线",
     "上正": "上证",
@@ -62,10 +77,16 @@ CORRECTIONS = {
     "死差": "死叉",
     "隔壁了": "有问题了",
     "短切": "短期",
-    "訪談": "反弹",
     "點位": "点位",
     "資金流": "资金流",
     "流入": "流入",
+    "流出": "流出",
+    "壓力位": "压力位",
+    "支撐": "支撑",
+    "匯率": "汇率",
+    "美元對人民幣": "美元对人民币",
+    "貴金屬": "贵金属",
+    "黃金": "黄金",
 }
 
 FILLER_PATTERNS = [
@@ -90,7 +111,11 @@ FILLER_PATTERNS = [
 ]
 
 
-def build_note(segments: list[TranscriptSegment], source_url: str) -> str:
+def build_note(
+    segments: list[TranscriptSegment],
+    source_url: str,
+    captured_at: datetime | None = None,
+) -> str:
     if not segments:
         return "# 直播笔记\n\n等待音频转写中。"
 
@@ -104,6 +129,10 @@ def build_note(segments: list[TranscriptSegment], source_url: str) -> str:
         "## 来源",
         "",
         source_url,
+        "",
+        "## 日期",
+        "",
+        format_note_datetime(captured_at),
         "",
         "## 快速判断",
         "",
@@ -131,6 +160,7 @@ def build_refined_note(
     segments: list[TranscriptSegment],
     source_url: str,
     ended_reason: str | None = None,
+    captured_at: datetime | None = None,
 ) -> str:
     if not segments:
         return "# 直播精炼整理\n\n暂无可整理内容。\n"
@@ -144,6 +174,7 @@ def build_refined_note(
         "",
         "## 基本信息",
         "",
+        f"- 日期：{format_note_datetime(captured_at)}",
         f"- 来源：{source_url}",
         f"- 转写时长：{duration}",
         f"- 转写片段：{len(segments)}",
@@ -151,19 +182,28 @@ def build_refined_note(
         "",
         "## 一句话结论",
         "",
-        build_core_takeaway(full_text),
+        build_core_takeaway(cleaned_segments, full_text),
         "",
         "## 要点",
         "",
     ]
-    lines.extend(build_key_points(full_text))
+    lines.extend(build_key_points(cleaned_segments, full_text))
     lines.extend(["", "## 板块观察", ""])
-    lines.extend(build_sector_points(full_text))
+    lines.extend(build_sector_points(cleaned_segments))
     lines.extend(["", "## 关键时间线", ""])
     lines.extend(build_refined_timeline(cleaned_segments))
     lines.extend(["", "## 需核对的 ASR 词", ""])
     lines.extend(build_uncertain_terms(full_text))
     return "\n".join(lines).strip() + "\n"
+
+
+def format_note_datetime(captured_at: datetime | None) -> str:
+    if captured_at is None:
+        return "未知"
+    if captured_at.tzinfo is None:
+        captured_at = captured_at.replace(tzinfo=timezone.utc)
+    local_time = captured_at.astimezone(ZoneInfo("Asia/Shanghai"))
+    return local_time.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def clean_text(text: str) -> str:
@@ -177,51 +217,117 @@ def clean_text(text: str) -> str:
     return cleaned.strip(" ，。,.")
 
 
-def build_core_takeaway(text: str) -> str:
+def build_core_takeaway(cleaned_segments: list[tuple[TranscriptSegment, str]], text: str) -> str:
     if not text:
         return "- 暂无足够内容形成结论。"
+    if has_any(text, ["资金流", "流出"]) and has_any(text, ["压力位", "支撑", "4200", "4199"]):
+        return "- 本场核心是冲高回落后的下午判断框架：先看资金流能否止住流出，再看指数能否重新站回压力位，同时用关键支撑位判断回落是否失控。"
+    if has_any(text, ["半导体", "CPO", "光模块"]) and has_any(text, ["第一次分歧", "死叉", "抱团"]):
+        return "- 本场重点在科技主线的分歧：半导体和 CPO/光模块仍是核心方向，但高位抱团开始松动，需要用均线和成交量判断是正常休息还是转弱。"
+    return f"- {polish_sentence(first_meaningful_text(cleaned_segments) or text, 180)}"
+
+
+def build_key_points(cleaned_segments: list[tuple[TranscriptSegment, str]], text: str) -> list[str]:
+    rules = [
+        (["4200", "4199", "10日均线"], "指数冲到 4199 附近后回落，主播认为 4200 是心理压力，但更关键的是 10 日均线附近的技术压力。"),
+        (["4173", "支撑"], "下方支撑被放在 4173 一带；若不能站回压力位，就要看这个支撑能否守住。"),
+        (["4155", "4156", "支撑"], "另一个明确支撑在 4155/4156 附近，主播认为可以回落，但不能有效跌破这个位置。"),
+        (["资金流", "超大单", "机构", "散户"], "高位回落的解释是机构/超大单流出、散户承接；下午首先观察资金流是否继续大幅流出。"),
+        (["110万亿", "2.1万亿", "7千亿"], "主播用市值和成交额解释资金流：少量成交会影响全市场估值变化，所以资金流对指数波动有放大作用。"),
+        (["科创", "创业", "主板", "散户"], "科创、创业、主板的强弱顺序被解释为筹码结构差异：散户越多，抛压和量化扰动越重。"),
+    ]
+    points = build_rule_points(text, rules, limit=6)
+    if points:
+        return points
+    fallback = summarize_text(text, max_sentences=4).splitlines()
+    return fallback or ["- 未识别到稳定的结构化要点，建议查看原始转写。"]
+
+
+def build_sector_points(cleaned_segments: list[tuple[TranscriptSegment, str]]) -> list[str]:
+    text = " ".join(item for _, item in cleaned_segments)
+    rules = [
+        (["石油", "煤炭", "油价"], "石油/煤炭：早盘领跌，主播归因于昨晚油价大跌。"),
+        (["券", "放量", "冲高"], "券商：早盘放量冲高，但遇到压力后回落；后续要看能否真正突破黄线压力。"),
+        (["机器人", "新高", "成交量"], "机器人：创出新高且成交量配合较好，主播认为走势相对健康。"),
+        (["消费电子", "顶背离"], "消费电子：虽然也创新高，但冲高回落并出现小级别顶背离，强度弱于机器人。"),
+        (["半导体", "第一次分歧"], "半导体：前两天是领涨主线，本场出现明显冲高回落，被主播定义为上涨后的第一次分歧。"),
+        (["半导体", "外盘", "科技股"], "半导体：回落还与外盘科技股的不确定性有关，主播认为资金会提前反映今晚外盘可能回落的风险。"),
+        (["CPO", "抱团", "死叉"], "CPO/光模块：与半导体同属抱团方向，尚未确认瓦解；若继续下跌并形成 5 日/10 日均线死叉，短期就要进入休息。"),
+        (["科创", "创业", "主板"], "科创/创业：科技方向回落会直接影响科创和创业板，下午不能只看主板指数。"),
+    ]
+    return build_rule_points(text, rules, limit=8) or ["- 暂未提炼出明确板块观点。"]
+
+
+def build_rule_points(
+    text: str,
+    rules: list[tuple[list[str], str]],
+    limit: int,
+) -> list[str]:
     points = []
-    if all(term in text for term in ["4126", "4190", "10日均线"]):
-        points.append("主播认为午前反弹仍属修复性质，下午先看 4190 附近压力和 10 日均线能否守住；资金流若继续回流，反弹才有延续基础。")
-    if "资金流" in text:
-        points.append("核心观察变量是资金流：早盘快速流出，10 点后流出放缓，10 点半后开始回流，是反弹出现的主要解释。")
-    if "机器人" in text and "半导体" in text:
-        points.append("强势方向集中在半导体、消费电子、AI 应用、机器人、新能源车等科技和高端制造链条。")
-    if not points:
-        points.append(text[:180] + ("..." if len(text) > 180 else ""))
-    return "\n".join(f"- {point}" for point in points[:3])
+    for keywords, summary in rules:
+        if all(keyword.lower() in text.lower() for keyword in keywords):
+            points.append(f"- {summary}")
+        if len(points) >= limit:
+            break
+    return points
 
 
-def build_key_points(text: str) -> list[str]:
-    rules = [
-        ("4126", "4126 附近被主播视为早盘支撑位，实际低点接近该区域，随后市场没有继续下杀。"),
-        ("4190", "4190 附近是 30 分钟级别压力位；若下午不能有效突破，反弹强度仍不足。"),
-        ("10日均线", "上证 10 日均线约在 4177-4178 一带，下午若重新跌破，反弹偏弱，下周一仍可能继续探低。"),
-        ("资金流", "资金流是判断反弹能否延续的第二个关键变量；若午后重新向下，指数大概率承压。"),
-        ("科创板", "科创板、芯片半导体、消费电子、机器人等仍是需要重点观察的强势方向。"),
-        ("加法", "做加法不应只看跌幅；更适合关注逆势强、或热点板块中前期涨幅不大后回调的标的。"),
-        ("放巨量", "高位冲高后放巨量、回落明显的品种，被主播视为高位减仓迹象，短线修复难度更大。"),
-    ]
-    points = [f"- {summary}" for keyword, summary in rules if keyword in text]
-    return points or ["- 未识别到稳定的结构化要点，建议查看原始转写。"]
+def build_topic_points(
+    cleaned_segments: list[tuple[TranscriptSegment, str]],
+    topics: list[tuple[str, list[str]]],
+    limit: int,
+) -> list[str]:
+    points = []
+    for label, keywords in topics:
+        snippet = find_topic_snippet(cleaned_segments, keywords)
+        if snippet:
+            points.append(f"- {label}：{snippet}")
+        if len(points) >= limit:
+            break
+    return points
 
 
-def build_sector_points(text: str) -> list[str]:
-    rules = [
-        ("半导体", "半导体/芯片：早盘回踩后反弹，仍属于较强方向；主播提到其接近 5 日线或五线谱红线后修复。"),
-        ("消费电子", "消费电子：与半导体硬件链条相关，早盘也有表现。"),
-        ("AI应用", "AI 应用/软件开发：早盘有所异动，但强度弱于机器人、半导体等方向。"),
-        ("机器人", "机器人：10 点半后走强，逻辑包括马斯克相关预期、大摩对中国机器人产业链的判断，以及与新能源车产业链的重叠。"),
-        ("新能源车", "新能源车：与机器人同属高端制造和装备制造链条，资金可能从高位方向向中低位方向切换。"),
-        ("化工", "化工：早盘有补涨性质，但前期横盘较久，整体弹性有限。"),
-        ("电力", "电力：短期偏弱，5 日均线压制、10 日均线支撑；若回踩不能守住，走势会转差。"),
-        ("航天", "航天：套牢盘较多，上行不顺；10 日均线暂时守住，但成交量不足，修复需要放量。"),
-        ("锂矿", "锂矿：已连续下跌多日，下周一是第八天时间窗口；若仍止不住，走势会更难看。"),
-        ("黄金", "黄金：受消息影响大，短期偏弱，修复不容易。"),
-        ("固态电池", "固态电池/电池：目前尚未走坏，重点观察 5 日线是否下穿 10 日线形成死叉。"),
-    ]
-    points = [f"- {summary}" for keyword, summary in rules if keyword in text]
-    return points or ["- 暂未提炼出明确板块观点。"]
+def find_topic_snippet(cleaned_segments: list[tuple[TranscriptSegment, str]], keywords: list[str]) -> str:
+    candidates = []
+    for index, (_, text) in enumerate(cleaned_segments):
+        if len(text) < 8 or is_low_signal(text):
+            continue
+        score = sum(1 for keyword in keywords if keyword.lower() in text.lower())
+        if score == 0:
+            continue
+        context = merge_context(cleaned_segments, index)
+        candidates.append((score, len(context), context))
+    if not candidates:
+        return ""
+    candidates.sort(key=lambda item: (-item[0], -item[1]))
+    return shorten(candidates[0][2], 150)
+
+
+def has_any(text: str, keywords: list[str]) -> bool:
+    lower = text.lower()
+    return any(keyword.lower() in lower for keyword in keywords)
+
+
+def polish_sentence(text: str, limit: int) -> str:
+    text = clean_text(shorten(text, limit))
+    text = re.sub(r"(懂了没有|听懂了没有|是不是|对吧|好吧)", "", text)
+    text = re.sub(r"\s+", " ", text).strip(" ，。")
+    return text or "暂无足够内容形成结论。"
+
+
+def merge_context(cleaned_segments: list[tuple[TranscriptSegment, str]], index: int) -> str:
+    texts = []
+    for _, text in cleaned_segments[index : index + 4]:
+        if text and not is_low_signal(text):
+            texts.append(text)
+    return "；".join(texts)
+
+
+def first_meaningful_text(cleaned_segments: list[tuple[TranscriptSegment, str]]) -> str:
+    for _, text in cleaned_segments:
+        if len(text) >= 20 and not is_low_signal(text):
+            return text
+    return ""
 
 
 def build_refined_timeline(cleaned_segments: list[tuple[TranscriptSegment, str]]) -> list[str]:

@@ -3,6 +3,15 @@ __pycache__/
 .pytest_cache/
 *.pyc
 runtime/
+exports/
 media/
 analysis/
 .env
+.env.*
+!.env.example
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+*.log

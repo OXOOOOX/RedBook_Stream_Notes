@@ -35,13 +35,23 @@ async def open_live_page(url: str, headless: bool = False) -> BrowserSession:
 
 async def unmute_page(page: Any) -> None:
     await page.wait_for_timeout(2_000)
-    for _ in range(3):
+    for _ in range(5):
+        player = page.locator(".main-player, .player-el, .xgplayer").first
+        if await player.count():
+            try:
+                await player.hover(timeout=2_000)
+            except Exception:
+                pass
+
         muted_button = page.locator(".xgplayer-icon-muted").first
         if await muted_button.count():
             try:
                 await muted_button.click(timeout=3_000)
             except Exception:
-                pass
+                box = await muted_button.bounding_box()
+                if box:
+                    await page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+
         await page.evaluate(
             """() => {
                 for (const media of document.querySelectorAll('video,audio')) {
@@ -54,9 +64,12 @@ async def unmute_page(page: Any) -> None:
             }"""
         )
         ready = await page.evaluate(
-            """() => Array.from(document.querySelectorAll('video,audio')).some(
-                media => media.volume > 0 && !media.muted && !media.paused && media.readyState >= 2
-            )"""
+            """() => {
+                const mediaReady = Array.from(document.querySelectorAll('video,audio')).some(
+                    media => media.volume > 0 && !media.muted && !media.paused && media.readyState >= 2
+                );
+                return mediaReady && !document.querySelector('.xgplayer-volume-muted');
+            }"""
         )
         if ready:
             break
