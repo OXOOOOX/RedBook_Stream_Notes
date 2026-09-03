@@ -8,6 +8,8 @@
 
 第一次了解项目，可依次读[构建过程](references/build-process.md)、[工程排雷](references/engineering-lessons.md)和[验证记录](references/validation.md)。安装包见 [GitHub Releases](https://github.com/OXOOOOX/RedBook_Stream_Notes/releases)；源码、安装包和文档的范围见[发布指南](references/publishing.md)。
 
+换机器或在新的 agent 会话继续开发时，从[项目交接](references/handoff.md)开始：包含已发布基线、重要决策、未解决事项、模拟验收材料和可复制的接手提示词。
+
 ```text
 分享文本 / 直播链接
         ↓
@@ -108,6 +110,7 @@ python -m venv .venv
 | [构建过程与架构](references/build-process.md) | 项目目标、模块关系、基线、现有增强与 skill 封装 |
 | [工程排雷复盘](references/engineering-lessons.md) | 根因、修复/规避、未解决限制与后续优先级 |
 | [验证记录](references/validation.md) | 已执行检查、结果、范围与真实设备验证边界 |
+| [项目交接](references/handoff.md) | 发布基线、决策、下一步、重跑样例与新聊天接手入口 |
 | [v0.1.0 发布说明](references/release-v0.1.0.md) | 本次交付内容、安装方法和已知限制 |
 | [发布指南](references/publishing.md) | 本地验证、打包、GitHub 提交与 Release |
 | [笔记模板](assets/final-note-template.md) | 可按主题调整的最终笔记结构 |

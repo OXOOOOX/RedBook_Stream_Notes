@@ -49,6 +49,8 @@ agent 按 skill 输出 `final_note.md`，保留原始 snapshot.json，未启动�
 
 工作流最初通过已授权 GitHub App 单独上传时，远程尚无完整 skill 代码，该中间提交产生过一次失败运行；完整代码合并后的上述运行通过。这个失败不作为最终版本的验证结果，也不从记录中隐去。相关权限问题和同步过程已写入[工程排雷](engineering-lessons.md)。
 
+最终发布提交为 `9376ed220502e7e5950ef0a6428665a44ab9ffb8`。其 [main 检查 33728862251](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33728862251) 和 [v0.1.0 标签检查 33729004469](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33729004469) 的 Windows/Ubuntu 作业均通过。发布附件已下载回本地并通过 SHA256 和内置清单校验；版本、大小与散列保存在[项目交接](handoff.md)。
+
 ## 真实设备验收仍需另做
 
 在用户实际环境中，按[安装指南](setup.md)先检查设备，再用目标直播进行短时录制：确认播放器可听，回录文件包含目标语音，第一段识别正确，停止后可导出。中文可明确传 `--language zh`，测试用 `--chunk-seconds 15 --max-chunks 1` 限定范围。

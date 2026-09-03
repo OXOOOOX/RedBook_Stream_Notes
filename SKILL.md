@@ -63,4 +63,4 @@ description: Listen to Xiaohongshu/RedBook livestream share links, capture speak
 - [笔记整理规范](references/note-quality.md)：基于证据清洗、纠错和最终交付。
 - [故障排查](references/troubleshooting.md)：静音、误判下播、ASR 失败、重启、平台差异。
 - [GitHub 发布](references/publishing.md)：验证、生成 ZIP、检查内容、提交与发布。
-- 维护项目时读[构建过程](references/build-process.md)、[工程排雷](references/engineering-lessons.md)和[验证记录](references/validation.md)；普通直播任务不需要加载这些复盘材料。
+- 维护项目时从[项目交接](references/handoff.md)了解基线与待办，再按需读[构建过程](references/build-process.md)、[工程排雷](references/engineering-lessons.md)和[验证记录](references/validation.md)；普通直播任务不需要加载这些复盘材料。

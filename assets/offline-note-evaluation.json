@@ -1,0 +1,31 @@
+{
+  "fixture_kind": "synthetic",
+  "user_request": "请把这些已有直播转写整理成笔记，保留数字和不确定的词，不需要重新监听。",
+  "snapshot": {
+    "id": "eval001",
+    "url": "https://xhslink.com/example",
+    "status": "failed",
+    "created_at": "2026-09-03T02:00:00Z",
+    "ended_reason": null,
+    "error": "audio device disconnected",
+    "chunks_completed": 2,
+    "segments": [
+      {
+        "index": 1,
+        "start": 0,
+        "end": 10,
+        "start_text": "00:00:00.000",
+        "end_text": "00:00:10.000",
+        "text": "今天不讨论资金流，也不判断压力位。我们讲直播间运营，先把今天的300名访客和昨天的200名分开。"
+      },
+      {
+        "index": 2,
+        "start": 60,
+        "end": 71,
+        "start_text": "00:01:00.000",
+        "end_text": "00:01:11.000",
+        "text": "对吧，未来七天先测试标题。目标转化率是百分之三，不是已经达到了。那个工具我听起来叫星流宝，名字还要核对。"
+      }
+    ]
+  }
+}
