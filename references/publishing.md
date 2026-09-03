@@ -58,6 +58,8 @@ git push origin main
 
 示例是本仓库现有 origin/main；以实际分支和仓库流程为准。需 PR 的分支遵循既有流程。
 
+如果推送包含 `.github/workflows/` 且 GitHub 报缺少 `workflow` scope，仓库管理员权限也不会自动补齐该凭据的 scope。先确认实际使用的登录凭据；只有已经获得相应授权的工具可以上传工作流。若没有，请账号持有人完成授权后继续，保留本地提交。不要在日志或文档中输出实际 token。本项目此次上传的具体处置见[工程复盘](engineering-lessons.md)。
+
 ## GitHub Release
 
 在对应提交/tag 上创建 Release，上传本工具生成的 ZIP；可把工具输出的 SHA256 写入 Release 描述。说明安装方式、变更、验证范围及录音间隔/规则摘要的主要限制。GitHub 自动提供的源码 ZIP 不等同于白名单安装包。
