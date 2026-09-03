@@ -19,7 +19,7 @@
 
 ## 验证范围
 
-本地 51 项离线测试通过；skill/链接/ZIP 校验、Python wheel 构建、独立目录解压启动和一次离线笔记行为验证通过。Ubuntu/Windows 的实际 CI 状态请查看 [运行记录](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/workflows/validate.yml)。没有在本次发布验证中录制真实直播或执行模型推理。
+本地 51 项离线测试通过；skill/链接/ZIP 校验、Python wheel 构建、独立目录解压启动和一次离线笔记行为验证通过。完整项目已经通过一次 Ubuntu/Windows 的远程 CI，具体提交证据保存在仓库的验证记录中；最终版本状态见 [工作流运行记录](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/workflows/validate.yml)。没有在本次发布验证中录制真实直播或执行模型推理。
 
 ## 已知限制
 

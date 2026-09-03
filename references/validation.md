@@ -45,6 +45,10 @@ agent 按 skill 输出 `final_note.md`，保留原始 snapshot.json，未启动�
 
 可查看 [Validate skill 运行记录](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/workflows/validate.yml)。README 徽章显示工作流状态；本文不预先声称未来提交或尚未结束的运行成功。
 
+2026-09-03 已完成首次完整项目的远程验证：提交 `92cb1e50489fe405e688c153a6602f36daede9a0` 的 [CI 运行 33728654353](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33728654353) 中，`validate (ubuntu-latest)` 与 `validate (windows-latest)` 均为 success。两端均完成安装、离线测试、skill/文档检查、ZIP 构建和构建产物上传。这是具体提交的证据；后续发布仍检查最终目标提交的结果。
+
+工作流最初通过已授权 GitHub App 单独上传时，远程尚无完整 skill 代码，该中间提交产生过一次失败运行；完整代码合并后的上述运行通过。这个失败不作为最终版本的验证结果，也不从记录中隐去。相关权限问题和同步过程已写入[工程排雷](engineering-lessons.md)。
+
 ## 真实设备验收仍需另做
 
 在用户实际环境中，按[安装指南](setup.md)先检查设备，再用目标直播进行短时录制：确认播放器可听，回录文件包含目标语音，第一段识别正确，停止后可导出。中文可明确传 `--language zh`，测试用 `--chunk-seconds 15 --max-chunks 1` 限定范围。
