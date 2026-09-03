@@ -31,6 +31,7 @@ REQUIRED_FILES = (
     "pyproject.toml",
     "requirements.txt",
 )
+OPTIONAL_FILES = ("LICENSE", "AGENTS.md")
 TOP_LEVEL_TREES = {
     "scripts": {".py"},
     "references": {".md"},
@@ -60,7 +61,7 @@ class PackageError(ValueError):
 
 
 def _allowlisted_path(name: str) -> bool:
-    if name in REQUIRED_FILES or name == "LICENSE":
+    if name in REQUIRED_FILES or name in OPTIONAL_FILES:
         return True
     parts = PurePosixPath(name).parts
     if not parts or parts[-1].startswith(".") or parts[-1].lower() in PRIVATE_FILENAMES:
@@ -97,8 +98,9 @@ def collect_bundle_files(root: Path) -> dict[str, bytes]:
     root = Path(root).absolute()
     _reject_link(root)
     files = {name: _read_file(root, name) for name in REQUIRED_FILES}
-    if (root / "LICENSE").exists() or (root / "LICENSE").is_symlink():
-        files["LICENSE"] = _read_file(root, "LICENSE")
+    for name in OPTIONAL_FILES:
+        if (root / name).exists() or (root / name).is_symlink():
+            files[name] = _read_file(root, name)
 
     for dirname, suffixes in TOP_LEVEL_TREES.items():
         directory = root / dirname

@@ -49,7 +49,18 @@ agent 按 skill 输出 `final_note.md`，保留原始 snapshot.json，未启动�
 
 工作流最初通过已授权 GitHub App 单独上传时，远程尚无完整 skill 代码，该中间提交产生过一次失败运行；完整代码合并后的上述运行通过。这个失败不作为最终版本的验证结果，也不从记录中隐去。相关权限问题和同步过程已写入[工程排雷](engineering-lessons.md)。
 
-最终发布提交为 `9376ed220502e7e5950ef0a6428665a44ab9ffb8`。其 [main 检查 33728862251](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33728862251) 和 [v0.1.0 标签检查 33729004469](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33729004469) 的 Windows/Ubuntu 作业均通过。发布附件已下载回本地并通过 SHA256 和内置清单校验；版本、大小与散列保存在[项目交接](handoff.md)。
+v0.1.0 最终发布提交为 `9376ed220502e7e5950ef0a6428665a44ab9ffb8`。其 [main 检查 33728862251](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33728862251) 和 [v0.1.0 标签检查 33729004469](https://github.com/OXOOOOX/RedBook_Stream_Notes/actions/runs/33729004469) 的 Windows/Ubuntu 作业均通过。发布附件已下载回本地并通过 SHA256 和内置清单校验；版本、大小与散列保存在[项目交接](handoff.md)。
+
+## v0.1.1 交接资料更新验证
+
+2026-09-03 为完整交接包追加检查：
+
+- 全量 pytest 为 **52 passed**，其中打包测试为 24 项；新增用例确认可选的 AGENTS.md 保留原始中文 UTF-8/CRLF 字节、散列和解压后的相对文档链接。
+- `package_skill.py --check` 和 skill-creator 基础格式校验通过。
+- pyproject、模块和 FastAPI OpenAPI 中的版本均为 `0.1.1`。
+- 从 GitHub 下载实际发布的 v0.1.0 ZIP，使用新版校验器验证成功，27 个文件与旧清单一致。
+
+最终提交的 Windows/Ubuntu CI、v0.1.1 附件下载回验及实际 SHA256 作为发布门槛；对应结果附在 [v0.1.1 Release](https://github.com/OXOOOOX/RedBook_Stream_Notes/releases/tag/v0.1.1) 中，避免把尚未产生的提交散列写入待打包文档。本节没有新增真实设备或模型推理验证。
 
 ## 真实设备验收仍需另做
 

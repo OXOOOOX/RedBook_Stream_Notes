@@ -8,7 +8,7 @@ from .jobs import manager
 from .schemas import CreateJobRequest, JobSnapshot
 
 
-app = FastAPI(title="RedBook Stream Notes", version="0.1.0")
+app = FastAPI(title="RedBook Stream Notes", version="0.1.1")
 
 
 @app.get("/health")

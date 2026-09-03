@@ -2,7 +2,7 @@
 
 ## 发布范围
 
-仓库根目录即 skill，维护一份源码；发布时用白名单打包。包内包含入口、agents 元数据、README、依赖声明、脚本、参考文档、模板、服务源码，以及维护者未来加入的 LICENSE。测试和 CI 保留在仓库中。工程背景见[构建过程](build-process.md)，已做检查见[验证记录](validation.md)。
+仓库根目录即 skill，维护一份源码；发布时用白名单打包。包内包含入口、agents 元数据、README、依赖声明、脚本、参考文档、模板、服务源码，以及存在时的 AGENTS.md 和 LICENSE。测试和 CI 保留在仓库中。工程背景见[构建过程](build-process.md)，已做检查见[验证记录](validation.md)。
 
 ## 本地验证
 
@@ -42,7 +42,7 @@ python scripts/package_skill.py --output dist/redbook-live-notes-review.zip
 git status --short
 git diff --stat
 git diff --check
-git add SKILL.md README.md agents references assets scripts tests .github .gitignore pyproject.toml requirements.txt
+git add AGENTS.md SKILL.md README.md agents references assets scripts src tests .github .gitignore pyproject.toml requirements.txt
 git diff --cached --stat
 git diff --cached --check
 ```
@@ -64,7 +64,9 @@ git push origin main
 
 在对应提交/tag 上创建 Release，上传本工具生成的 ZIP；可把工具输出的 SHA256 写入 Release 描述。说明安装方式、变更、验证范围及录音间隔/规则摘要的主要限制。GitHub 自动提供的源码 ZIP 不等同于白名单安装包。
 
-本次发布说明保存在 [release-v0.1.0.md](release-v0.1.0.md)。打包后的 SHA256 可另存同名 `.zip.sha256` 文件随附件上传；它是该 ZIP 的校验值，不应提前写进参与打包的文档形成循环依赖。Release 应明确绑定已推送且经过检查的提交。MVP 阶段使用预发布标记，避免把有限验证误表述为正式生产可用。
+当前发布说明保存在 [release-v0.1.1.md](release-v0.1.1.md)，首次发布记录保存在 [release-v0.1.0.md](release-v0.1.0.md)。打包后的 SHA256 可另存同名 `.zip.sha256` 文件随附件上传；它是该 ZIP 的校验值，不应提前写进参与打包的文档形成循环依赖。Release 应明确绑定已推送且经过检查的提交。MVP 阶段使用预发布标记，避免把有限验证误表述为正式生产可用。
+
+文档或模板更新后，main 的变化不会自动进入已经上传的 ZIP。需要让安装包使用者也获得更新时，应从新的提交构建并发布新版本，同步 README、交接入口和版本号；下载回 Release 附件，确认所需新文件确实存在，且文件内容与发布提交一致。v0.1.1 就用于补齐首次发布后增加的交接资料。
 
 仓库的工作流只做测试并上传 CI 构建产物，不自动 push、打 tag、公开 Release 或发布 PyPI。未来升级版本时核对 pyproject.toml、src 的 __version__ 和 FastAPI version；skill 名称保持 redbook-live-notes。
 

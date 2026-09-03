@@ -87,6 +87,25 @@ def test_bundle_is_self_contained_and_excludes_private_runtime_files(skill_sourc
     assert len(files) == len(manifest["files"])
 
 
+def test_optional_agents_document_keeps_exact_bytes_and_relocated_links(skill_source, tmp_path):
+    instructions = "# 项目文件操作约束\r\n\r\n禁止批量删除文件或目录。\r\n".encode("utf-8")
+    (skill_source / "AGENTS.md").write_bytes(instructions)
+    write(skill_source, "references/handoff.md", "# Handoff\nRead the [project instructions](../AGENTS.md).\n")
+    write(skill_source, "README.md", "# Livestream notes\nRead the [handoff guide](references/handoff.md).\n")
+    output = tmp_path / "with-agents.zip"
+    package.create_bundle(skill_source, output)
+    manifest = package.verify_bundle(output)
+    agents_entry = next(entry for entry in manifest["files"] if entry["path"] == "AGENTS.md")
+    assert agents_entry["sha256"] == hashlib.sha256(instructions).hexdigest()
+    with zipfile.ZipFile(output) as bundle:
+        assert bundle.read("redbook-live-notes/AGENTS.md") == instructions
+        relocated = tmp_path / "new installation directory"
+        bundle.extractall(relocated)
+    installed = relocated / "redbook-live-notes"
+    assert (installed / "AGENTS.md").read_bytes() == instructions
+    assert package.validate_source(installed)["AGENTS.md"] == instructions
+
+
 def test_repeated_build_is_deterministic_and_requires_explicit_overwrite(skill_source, tmp_path):
     first, second = tmp_path / "first.zip", tmp_path / "second.zip"
     package.create_bundle(skill_source, first)
